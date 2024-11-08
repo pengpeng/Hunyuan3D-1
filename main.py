@@ -1,5 +1,7 @@
-# Open Source Model Licensed under the Apache License Version 2.0 and Other Licenses of the Third-Party Components therein:
-# The below Model in this distribution may have been modified by THL A29 Limited ("Tencent Modifications"). All Tencent Modifications are Copyright (C) 2024 THL A29 Limited.
+# Open Source Model Licensed under the Apache License Version 2.0 
+# and Other Licenses of the Third-Party Components therein:
+# The below Model in this distribution may have been modified by THL A29 Limited 
+# ("Tencent Modifications"). All Tencent Modifications are Copyright (C) 2024 THL A29 Limited.
 
 # Copyright (C) 2024 THL A29 Limited, a Tencent company.  All rights reserved. 
 # The below software and/or models in this distribution may have been 
@@ -21,12 +23,16 @@
 # by Tencent in accordance with TENCENT HUNYUAN COMMUNITY LICENSE AGREEMENT.l
 
 import os
+import warnings
 import torch
 from PIL import Image
 import argparse
 
 from infer import Text2Image, Removebg, Image2Views, Views2Mesh, GifRenderer
 
+warnings.simplefilter('ignore', category=UserWarning)
+warnings.simplefilter('ignore', category=FutureWarning)
+warnings.simplefilter('ignore', category=DeprecationWarning)
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -90,8 +96,20 @@ if __name__ == "__main__":
 
     # init model
     rembg_model = Removebg()
-    image_to_views_model = Image2Views(device=args.device, use_lite=args.use_lite)
-    views_to_mesh_model = Views2Mesh(args.mv23d_cfg_path, args.mv23d_ckt_path, args.device, use_lite=args.use_lite)
+    image_to_views_model = Image2Views(
+        device=args.device, 
+        use_lite=args.use_lite,
+        save_memory=args.save_memory
+    )
+    
+    views_to_mesh_model = Views2Mesh(
+        args.mv23d_cfg_path, 
+        args.mv23d_ckt_path, 
+        args.device, 
+        use_lite=args.use_lite,
+        save_memory=args.save_memory
+    )
+    
     if args.text_prompt:
         text_to_image_model = Text2Image(
             pretrain = args.text2image_path,
