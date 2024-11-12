@@ -58,33 +58,17 @@ CONST_MAX_QUEUE = 1
 CONST_SERVER = '0.0.0.0'
 
 CONST_HEADER = '''
-<h2><b>Official 🤗 Gradio Demo</b></h2><h2><a href='https://github.com/tencent/Hunyuan3D-1' target='_blank'><b>Hunyuan3D-1.0: A Unified Framework for Text-to-3D and Image-to-3D
-Generationr</b></a></h2>
-Code: <a href='https://github.com/tencent/Hunyuan3D-1' target='_blank'>GitHub</a>. Techenical report: <a href='https://arxiv.org/abs/placeholder' target='_blank'>ArXiv</a>.
+<h2><a href='https://github.com/tencent/Hunyuan3D-1' target='_blank'><b>Tencent Hunyuan3D-1.0: A Unified Framework for Text-to-3D and Image-to-3D Generation</b></a></h2>
+⭐️Technical report: <a href='https://arxiv.org/pdf/2411.02293' target='_blank'>ArXiv</a>. ⭐️Code: <a href='https://github.com/tencent/Hunyuan3D-1' target='_blank'>GitHub</a>.
 
-❗️❗️❗️**Important Notes:**
-- By default, our demo can export a .obj mesh with vertex colors or a .glb mesh.
-- If you select "texture mapping," it will export a .obj mesh with a texture map or a .glb mesh.
-- If you select "render GIF," it will export a GIF image rendering of the .glb file.
-- If the result is unsatisfactory, please try a different seed value (Default: 0).
+❗️❗️❗️**Important Notes**
+
+Our demo allows you to export models in various formats:
+- By default, export as a *.obj mesh with vertex colors or a *.glb mesh.
+- Select "texture mapping" to export a *.obj mesh with a texture map or a *.glb mesh.
+- Select "render GIF" to export a GIF rendering of the *.glb file.
+If the results aren't satisfactory, try using a different seed value (default is 0).
 '''
-
-CONST_CITATION = r"""
-If HunYuan3D-1 is helpful, please help to ⭐ the <a href='https://github.com/tencent/Hunyuan3D-1' target='_blank'>Github Repo</a>. Thanks! [![GitHub Stars](https://img.shields.io/github/stars/tencent/Hunyuan3D-1?style=social)](https://github.com/tencent/Hunyuan3D-1)
----
-📝 **Citation**
-If you find our work useful for your research or applications, please cite using this bibtex:
-```bibtex
-@misc{yang2024tencent,
-    title={Tencent Hunyuan3D-1.0: A Unified Framework for Text-to-3D and Image-to-3D Generation},
-    author={Xianghui Yang and Huiwen Shi and Bowen Zhang and Fan Yang and Jiacheng Wang and Hongxu Zhao and Xinhai Liu and Xinzhou Wang and Qingxiang Lin and Jiaao Yu and Lifu Wang and Zhuo Chen and Sicong Liu and Yuhong Liu and Yong Yang and Di Wang and Jie Jiang and Chunchao Guo},
-    year={2024},
-    eprint={2411.02293},
-    archivePrefix={arXiv},
-    primaryClass={cs.CV}
-}
-```
-"""
 
 ################################################################
 # prepare text examples and image examples
@@ -217,18 +201,18 @@ with gr.Blocks() as demo:
                     text = gr.TextArea('一只黑白相间的熊猫在白色背景上居中坐着，呈现出卡通风格和可爱氛围。', lines=1, max_lines=10, label='Input text')
                     with gr.Row():
                         textgen_seed = gr.Number(value=0, label="T2I seed", precision=0)
-                        textgen_step = gr.Number(value=25, label="T2I step", precision=0)
+                        textgen_step = gr.Number(value=25, label="T2I steps", precision=0, minimum=10, maximum=50)
                         textgen_SEED = gr.Number(value=0, label="Gen seed", precision=0)
-                        textgen_STEP = gr.Number(value=50, label="Gen step", precision=0)
-                        textgen_max_faces = gr.Number(value=90000, label="max number of faces", precision=0)
+                        textgen_STEP = gr.Number(value=50, label="Gen steps", precision=0, minimum=40, maximum=100)
+                        textgen_max_faces = gr.Number(value=90000, label="Face number", precision=0, minimum=5000, maximum=1000000)
                         
                     with gr.Row():
-                        textgen_do_texture_mapping = gr.Checkbox(label="texture mapping", value=False, interactive=True)
-                        textgen_do_render_gif = gr.Checkbox(label="Render gif", value=False, interactive=True)
+                        textgen_do_texture_mapping = gr.Checkbox(label="Texture mapping", value=False, interactive=True)
+                        textgen_do_render_gif = gr.Checkbox(label="Render GIF", value=False, interactive=True)
                         textgen_submit = gr.Button("Generate", variant="primary")
 
                     with gr.Row():
-                        gr.Examples(examples=example_ts, inputs=[text], label="Txt examples", examples_per_page=10)
+                        gr.Examples(examples=example_ts, inputs=[text], label="Text examples", examples_per_page=10)
                     
             with gr.Tab("Image to 3D"):
                 with gr.Column():
@@ -238,12 +222,12 @@ with gr.Blocks() as demo:
                                            interactive=True)
                     with gr.Row(): 
                         imggen_SEED = gr.Number(value=0, label="Gen seed", precision=0)
-                        imggen_STEP = gr.Number(value=50, label="Gen step", precision=0)
-                        imggen_max_faces = gr.Number(value=90000, label="max number of faces", precision=0)
+                        imggen_STEP = gr.Number(value=50, label="Gen steps", precision=0, minimum=40, maximum=100)
+                        imggen_max_faces = gr.Number(value=90000, label="Face number", precision=0, minimum=5000, maximum=1000000)
 
                     with gr.Row():
-                        imggen_do_texture_mapping = gr.Checkbox(label="texture mapping", value=False, interactive=True)
-                        imggen_do_render_gif = gr.Checkbox(label="Render gif", value=False, interactive=True)
+                        imggen_do_texture_mapping = gr.Checkbox(label="Texture mapping", value=False, interactive=True)
+                        imggen_do_render_gif = gr.Checkbox(label="Render GIF", value=False, interactive=True)
                         imggen_submit = gr.Button("Generate", variant="primary")       
                     with gr.Row():
                         gr.Examples(
@@ -256,15 +240,15 @@ with gr.Blocks() as demo:
         with gr.Column(scale=3):
             with gr.Row():
                 with gr.Column(scale=2):
-                    rem_bg_image = gr.Image(label="No backgraound image", type="pil",
+                    rem_bg_image = gr.Image(label="Image without background", type="pil",
                                            image_mode="RGBA", interactive=False)
                 with gr.Column(scale=3):
-                    result_image = gr.Image(label="Multi views", type="pil", interactive=False)
+                    result_image = gr.Image(label="Multi-view images", type="pil", interactive=False)
                 
             with gr.Row():                
                 result_3dobj = gr.Model3D(
                     clear_color=[0.0, 0.0, 0.0, 0.0],
-                    label="Output Obj",
+                    label="OBJ",
                     show_label=True,
                     visible=True,
                     camera_position=[90, 90, None],
@@ -273,20 +257,16 @@ with gr.Blocks() as demo:
 
                 result_3dglb = gr.Model3D(
                     clear_color=[0.0, 0.0, 0.0, 0.0],
-                    label="Output Glb",
+                    label="GLB",
                     show_label=True,
                     visible=True,
                     camera_position=[90, 90, None],
                     interactive=False
                 )
-                result_gif = gr.Image(label="Rendered GIF", interactive=False)
+                result_gif = gr.Image(label="GIF", interactive=False)
                 
             with gr.Row():    
-                gr.Markdown("""
-                We recommend downloading and opening Glb with 3D software, such as Blender, MeshLab, etc.
-                
-                Limited by gradio, Obj file here only be shown as vertex shading, but Glb can be texture shading.
-                """)
+                gr.Markdown("""Due to Gradio limitations, OBJ files are displayed with vertex shading only, while GLB files can be viewed with texture shading. For the best experience, we recommend downloading the GLB files and opening them with 3D software like Blender or MeshLab.""")
 
 #===============================================================
 # gradio running code
@@ -337,7 +317,6 @@ with gr.Blocks() as demo:
 # start gradio server
 #===============================================================
 
-    gr.Markdown(CONST_CITATION)
     demo.queue(max_size=CONST_MAX_QUEUE)
     demo.launch(server_name=CONST_SERVER, server_port=CONST_PORT)
 

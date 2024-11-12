@@ -48,17 +48,22 @@ def save_gif(pils, save_path, df=False):
     
 
 class Image2Views():
-    def __init__(self, device="cuda:0", use_lite=False, save_memory=False):
+    def __init__(self, 
+            device="cuda:0", use_lite=False, save_memory=False,
+            std_pretrain='./weights/mvd_std', lite_pretrain='./weights/mvd_lite'
+        ):
         self.device = device
         if use_lite:
+            print("loading", lite_pretrain)
             self.pipe = Hunyuan3d_MVD_Lite_Pipeline.from_pretrained(
-                "./weights/mvd_lite",
+                lite_pretrain,
                 torch_dtype = torch.float16,
                 use_safetensors = True,
             )
         else:
+            print("loadding", std_pretrain)
             self.pipe = HunYuan3D_MVD_Std_Pipeline.from_pretrained(
-                "./weights/mvd_std",
+                std_pretrain,
                 torch_dtype = torch.float16,
                 use_safetensors = True,
             )

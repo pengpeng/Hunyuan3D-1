@@ -40,7 +40,7 @@ class GifRenderer():
         self, 
         obj_filename, 
         elev=0, 
-        azim=0, 
+        azim=None, 
         resolution=512, 
         gif_dst_path='', 
         n_views=120, 

@@ -30,7 +30,7 @@ from pytorch3d.renderer import (
 def render(
     obj_filename, 
     elev=0, 
-    azim=0, 
+    azim=None, 
     resolution=512, 
     gif_dst_path='', 
     n_views=120, 
@@ -49,7 +49,7 @@ def render(
     mesh = load_objs_as_meshes([obj_filename], device=device)
     meshes = mesh.extend(n_views)
     
-    if gif_dst_path != '':
+    if azim is None:
         elev = torch.linspace(elev, elev, n_views+1)[:-1]
         azim = torch.linspace(0, 360, n_views+1)[:-1]
 
@@ -76,16 +76,15 @@ def render(
     )
     images = renderer(meshes)
 
-    # single frame rendering
-    if gif_dst_path == '': 
-        frame = images[0, ..., :3] if rgb else images[0, ...]
-        frame = Image.fromarray((frame.cpu().squeeze(0) * 255).numpy().astype("uint8"))
-        return frame
+    if gif_dst_path != '': 
+        with imageio.get_writer(uri=gif_dst_path, mode='I', duration=1. / fps * 1000, loop=0) as writer:
+            for i in range(n_views):
+                frame = images[i, ..., :3] if rgb else images[i, ...]
+                frame = Image.fromarray((frame.cpu().squeeze(0) * 255).numpy().astype("uint8"))
+                writer.append_data(frame)
 
-    # orbit frames rendering
-    with imageio.get_writer(uri=gif_dst_path, mode='I', duration=1. / fps * 1000, loop=0) as writer:
-        for i in range(n_views):
-            frame = images[i, ..., :3] if rgb else images[i, ...]
-            frame = Image.fromarray((frame.cpu().squeeze(0) * 255).numpy().astype("uint8"))
-            writer.append_data(frame)
-        return gif_dst_path
+    frame = images[..., :3] if rgb else images
+    frames = [Image.fromarray((fra.cpu().squeeze(0) * 255).numpy().astype("uint8")) for fra in frame]
+    return frames
+
+
