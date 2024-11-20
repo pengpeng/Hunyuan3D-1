@@ -27,7 +27,7 @@ from pytorch3d.renderer import (
 )
 
 
-def render(
+def render_func(
     obj_filename, 
     elev=0, 
     azim=None, 

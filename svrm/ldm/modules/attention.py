@@ -246,8 +246,11 @@ class CrossAttention(nn.Module):
 class FlashAttention(nn.Module):
     def __init__(self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.):
         super().__init__()
-        print(f"Setting up {self.__class__.__name__}. Query dim is {query_dim}, context_dim is {context_dim} and using "
-              f"{heads} heads.")
+        # print(
+        #     f"Setting up {self.__class__.__name__}. Query dim is {query_dim}, "
+        #     "context_dim is {context_dim} and using "
+        #     f"{heads} heads."
+        # )
         inner_dim = dim_head * heads
         context_dim = default(context_dim, query_dim)
         self.scale = dim_head ** -0.5
@@ -269,7 +272,12 @@ class FlashAttention(nn.Module):
         k = self.to_k(context).to(dtype)
         v = self.to_v(context).to(dtype)
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b n h d', h=h), (q, k, v)) # q is [b, 3079, 16, 64]
-        out = flash_attn_func(q, k, v, dropout_p=self.dropout, softmax_scale=None, causal=False, window_size=(-1, -1)) # out is same shape to q
+        out = flash_attn_func(q, k, v, 
+                              dropout_p=self.dropout, 
+                              softmax_scale=None, 
+                              causal=False, 
+                              window_size=(-1, -1)
+                             ) # out is same shape to q
         out = rearrange(out, 'b n h d -> b n (h d)', h=h)
         return self.to_out(out.float())
 
@@ -277,8 +285,11 @@ class MemoryEfficientCrossAttention(nn.Module):
     # https://github.com/MatthieuTPHR/diffusers/blob/d80b531ff8060ec1ea982b65a1b8df70f73aa67c/src/diffusers/models/attention.py#L223
     def __init__(self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.0):
         super().__init__()
-        print(f"Setting up {self.__class__.__name__}. Query dim is {query_dim}, context_dim is {context_dim} and using "
-              f"{heads} heads.")
+        # print(
+        #     f"Setting up {self.__class__.__name__}. Query dim is {query_dim}, "
+        #     "context_dim is {context_dim} and using "
+        #     f"{heads} heads."
+        # )
         inner_dim = dim_head * heads
         context_dim = default(context_dim, query_dim)
 
@@ -327,10 +338,12 @@ class BasicTransformerBlock(nn.Module):
         super().__init__()
         self.disable_self_attn = disable_self_attn
         self.attn1 = CrossAttention(query_dim=dim, heads=n_heads, dim_head=d_head, dropout=dropout,
-                                    context_dim=context_dim if self.disable_self_attn else None)  # is a self-attention if not self.disable_self_attn
+                                    context_dim=context_dim if self.disable_self_attn else None)
+        # is a self-attention if not self.disable_self_attn
         self.ff = FeedForward(dim, dropout=dropout, glu=gated_ff)
         self.attn2 = CrossAttention(query_dim=dim, context_dim=context_dim,
-                                    heads=n_heads, dim_head=d_head, dropout=dropout)  # is self-attn if context is none
+                                    heads=n_heads, dim_head=d_head, dropout=dropout)  
+        # is self-attn if context is none
         self.norm1 = Fp32LayerNorm(dim)
         self.norm2 = Fp32LayerNorm(dim)
         self.norm3 = Fp32LayerNorm(dim)
@@ -450,8 +463,4 @@ class ImgToTriplaneTransformer(nn.Module):
             x = block(x, context=context)  
         x = self.norm(x)
         return x
-
-
-
-
 

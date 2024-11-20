@@ -47,11 +47,15 @@ class Views2Mesh():
             use_lite: lite version
             save_memory: cpu auto
         '''
-        self.mv23d_predictor = MV23DPredictor(mv23d_ckt_path, mv23d_cfg_path, device=device)  
-        self.mv23d_predictor.model.eval()
-        self.order = [0, 1, 2, 3, 4, 5] if use_lite else [0, 2, 4, 5, 3, 1]
         self.device = device
         self.save_memory = save_memory
+        self.mv23d_predictor = MV23DPredictor(
+            mv23d_ckt_path, 
+            mv23d_cfg_path, 
+            device = "cpu" if save_memory else device
+        )  
+        self.mv23d_predictor.model.eval()
+        self.order = [0, 1, 2, 3, 4, 5] if use_lite else [0, 2, 4, 5, 3, 1]
         set_parameter_grad_false(self.mv23d_predictor.model)
         print('view2mesh model', get_parameter_number(self.mv23d_predictor.model))
 
@@ -109,7 +113,6 @@ class Views2Mesh():
             do_texture_mapping = do_texture_mapping
         )
         torch.cuda.empty_cache()
-        return save_dir
 
 
 if __name__ == "__main__":

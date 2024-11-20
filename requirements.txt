@@ -1,4 +1,4 @@
---find-links https://download.pytorch.org/whl/cu118
+--find-links https://download.pytorch.org/whl/cu121
 torch==2.2.0
 torchvision==0.17.0
 diffusers
@@ -18,7 +18,7 @@ trimesh
 PyMCubes
 xatlas
 libigl
-git+https://github.com/facebookresearch/pytorch3d@stable
-git+https://github.com/NVlabs/nvdiffrast
+typeguard
 open3d
 ninja
+roma

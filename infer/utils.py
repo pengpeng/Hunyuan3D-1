@@ -21,7 +21,8 @@
 # optimizer states), machine-learning model code, inference-enabling code, training-enabling code, 
 # fine-tuning enabling code and other elements of the foregoing made publicly available 
 # by Tencent in accordance with TENCENT HUNYUAN COMMUNITY LICENSE AGREEMENT.
-
+import sys
+import io
 import os
 import time
 import random
@@ -29,6 +30,7 @@ import numpy as np
 import torch
 from torch.cuda.amp import autocast, GradScaler
 from functools import wraps
+
 
 def seed_everything(seed):
     '''
@@ -39,6 +41,7 @@ def seed_everything(seed):
     torch.manual_seed(seed)
     os.environ["PL_GLOBAL_SEED"] = str(seed)
 
+    
 def timing_decorator(category: str):
     '''
         timing_decorator: record time
@@ -57,6 +60,7 @@ def timing_decorator(category: str):
         return wrapper
     return decorator
 
+
 def auto_amp_inference(func):
     '''
         with torch.cuda.amp.autocast()"
@@ -69,10 +73,12 @@ def auto_amp_inference(func):
         return output
     return wrapper
 
+
 def get_parameter_number(model):
     total_num = sum(p.numel() for p in model.parameters())
     trainable_num = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return {'Total': total_num, 'Trainable': trainable_num}
+
 
 def set_parameter_grad_false(model):
     for p in model.parameters():

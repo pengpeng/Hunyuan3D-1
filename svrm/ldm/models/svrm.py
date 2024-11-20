@@ -40,13 +40,36 @@ try:
     import open3d as o3d
 except:
     raise "failed to import 3d libraries "
+    
+try:
+    import cvcuda
+    def uv_padding(image, hole_mask, uv_padding_size = 2):
+
+        inpaint_image = (
+                torch.as_tensor(
+                    cvcuda.inpaint(
+                        src=cvcuda.as_tensor((image * 255).to(torch.uint8), 'HWC'),
+                        masks=cvcuda.as_tensor((hole_mask * 255).view(1024, 1024, 1).to(torch.uint8), 'HWC'),
+                        inpaintRadius=uv_padding_size,
+                    ).cuda()
+                )
+        )
+        return inpaint_image.cpu().numpy()
+except Exception as err:
+    def uv_padding(image, hole_mask, uv_padding_size = 2):
+        return cv2.inpaint(
+            (image.detach().cpu().numpy() * 255).astype(np.uint8),
+            (hole_mask.detach().cpu().numpy() * 255).astype(np.uint8),
+            uv_padding_size,
+            cv2.INPAINT_TELEA
+        )
 
 from ..modules.rendering_neus.mesh import Mesh
 from ..modules.rendering_neus.rasterize import NVDiffRasterizerContext
 
 from ..utils.ops import scale_tensor
 from ..util import count_params, instantiate_from_config
-from ..vis_util import render
+from ..vis_util import render_func
 
 
 def unwrap_uv(v_pos, t_pos_idx):
@@ -58,14 +81,6 @@ def unwrap_uv(v_pos, t_pos_idx):
     indices = indices.astype(np.int64, casting="same_kind")
     return uvs, indices
 
-
-def uv_padding(image, hole_mask, uv_padding_size = 2):
-    return cv2.inpaint(
-        (image.detach().cpu().numpy() * 255).astype(np.uint8),
-        (hole_mask.detach().cpu().numpy() * 255).astype(np.uint8),
-        uv_padding_size,
-        cv2.INPAINT_TELEA
-    )
 
 def refine_mesh(vtx_refine, faces_refine):
     mesh = o3d.geometry.TriangleMesh(
@@ -120,14 +135,16 @@ class SVRMModel(torch.nn.Module):
         out_dir = 'outputs/test'
     ):
         """
-        color_type: 0 for ray texture, 1 for vertices texture
+        do_texture_mapping: True for ray texture, False for vertices texture
         """
         
-        obj_vertext_path = os.path.join(out_dir, 'mesh_with_colors.obj')
-        obj_path = os.path.join(out_dir, 'mesh.obj')
-        obj_texture_path = os.path.join(out_dir, 'texture.png')
-        obj_mtl_path = os.path.join(out_dir, 'texture.mtl')
-        glb_path = os.path.join(out_dir, 'mesh.glb')
+        obj_vertext_path = os.path.join(out_dir, 'mesh_vertex_colors.obj')
+        
+        if do_texture_mapping:
+            obj_path = os.path.join(out_dir, 'mesh.obj')
+            obj_texture_path = os.path.join(out_dir, 'texture.png')
+            obj_mtl_path = os.path.join(out_dir, 'texture.mtl')
+            glb_path = os.path.join(out_dir, 'mesh.glb')
 
         st = time.time()
         
@@ -204,15 +221,13 @@ class SVRMModel(torch.nn.Module):
         mesh = trimesh.load_mesh(obj_vertext_path)
         print(f"=====> generate mesh with vertex shading time: {time.time() - st}")
         st = time.time()
-
-        if not do_texture_mapping:
-            shutil.copy(obj_vertext_path, obj_path)
-            mesh.export(glb_path, file_type='glb')
-            return None
-            
-
-        ##########  export texture  ########
         
+        if not do_texture_mapping:
+            return obj_vertext_path, None
+            
+        ###########################################################
+        #-------------    export texture    -----------------------
+        ###########################################################
         
         st = time.time()
         
@@ -238,12 +253,9 @@ class SVRMModel(torch.nn.Module):
 
         # Interpolate world space position
         gb_pos = ctx.interpolate_one(vtx_refine, rast[None, ...], faces_refine)[0][0]
-        
         with torch.no_grad():
             gb_mask_pos_scale = scale_tensor(gb_pos.unsqueeze(0).view(1, -1, 3), (-1, 1), (-1, 1))
-            
             tex_map = self.render.forward_points(cur_triplane, gb_mask_pos_scale)['rgb']
-            
             tex_map = tex_map.float().squeeze(0)  # (0, 1)
             tex_map = tex_map.view((texture_res, texture_res, 3)) 
             img = uv_padding(tex_map, hole_mask)
@@ -257,7 +269,7 @@ class SVRMModel(torch.nn.Module):
             fid.write('newmtl material_0\n')
             fid.write("Ka 1.000 1.000 1.000\n")
             fid.write("Kd 1.000 1.000 1.000\n")
-            fid.write("Ks 0.000 0.000 0.000\n")
+            fid.write("Ks 0.500 0.500 0.500\n")
             fid.write("d 1.0\n")
             fid.write("illum 2\n")
             fid.write(f'map_Kd texture.png\n')
@@ -278,4 +290,5 @@ class SVRMModel(torch.nn.Module):
         mesh = trimesh.load_mesh(obj_path)
         mesh.export(glb_path, file_type='glb')
         print(f"=====> generate mesh with texture shading time: {time.time() - st}")
+        return obj_path, glb_path
   

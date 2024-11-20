@@ -33,7 +33,7 @@ from omegaconf import OmegaConf
 from torchvision import transforms
 from safetensors.torch import save_file, load_file
 from .ldm.util import instantiate_from_config
-from .ldm.vis_util import render
+from .ldm.vis_util import render_func
 
 class MV23DPredictor(object):
     def __init__(self, ckpt_path, cfg_path, elevation=15, number_view=60, 
@@ -46,9 +46,7 @@ class MV23DPredictor(object):
         self.elevation_list = [0, 0, 0, 0, 0, 0, 0]
         self.azimuth_list = [0, 60, 120, 180, 240, 300, 0]
 
-        st = time.time()
         self.model = self.init_model(ckpt_path, cfg_path)
-        print(f"=====> mv23d model init time: {time.time() - st}")
 
         self.input_view_transform = transforms.Compose([
             transforms.Resize(504, interpolation=Image.BICUBIC),

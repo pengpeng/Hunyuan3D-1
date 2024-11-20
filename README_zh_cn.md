@@ -1,15 +1,3 @@
----
-title: Hunyuan3D-1.0
-emoji: 😻
-colorFrom: purple
-colorTo: red
-sdk: gradio
-sdk_version: 5.5.0
-app_file: app_hg.py
-pinned: false
-short_description: Text-to-3D and Image-to-3D Generation
----
-
 [English](README.md) | [简体中文](README_zh_cn.md)
 
 <!-- ## **Hunyuan3D-1.0** -->
@@ -29,13 +17,13 @@ short_description: Text-to-3D and Image-to-3D Generation
 </div>
 
 
-## 🔥🔥🔥 News!!
+## 🔥🔥🔥 更新!!
 
-* Nov 5, 2024: 💬 We support demo running  image_to_3d generation now. Please check the [script](#using-gradio) below.
-* Nov 5, 2024: 💬 We support demo running  text_to_3d generation now. Please check the [script](#using-gradio) below.
+* Nov 5, 2024: 💬 已经支持图生3D。请在[script](#using-gradio)体验。
+* Nov 5, 2024: 💬 已经支持文生3D，请在[script](#using-gradio)体验。
 
 
-## 📑 Open-source Plan
+## 📑 开源计划
 
 - [x] Inference 
 - [x] Checkpoints
@@ -47,63 +35,61 @@ short_description: Text-to-3D and Image-to-3D Generation
 
 
 
-## **Abstract**
+## **概要**
 <p align="center">
   <img src="./assets/teaser.png"  height=450>
 </p>
 
-While 3D generative models have greatly improved artists' workflows, the existing diffusion models for 3D generation suffer from slow generation and poor generalization. To address this issue, we propose a two-stage approach named Hunyuan3D-1.0 including a lite version and a standard version, that both support text- and image-conditioned generation.
-
-In the first stage, we employ a multi-view diffusion model that efficiently generates multi-view RGB in approximately 4 seconds. These multi-view images capture rich details of the 3D asset from different viewpoints, relaxing the tasks from single-view to multi-view reconstruction. In the second stage, we introduce a feed-forward reconstruction model that rapidly and faithfully reconstructs the 3D asset given the generated multi-view images in approximately 7 seconds. The reconstruction network learns to handle noises and in-consistency introduced by the multi-view diffusion and leverages the available information from the condition image to efficiently recover the 3D structure.
-
-Our framework involves the text-to-image model, i.e., Hunyuan-DiT, making it a unified framework to support both text- and image-conditioned 3D generation. Our standard version has 3x more parameters than our lite and other existing model. Our Hunyuan3D-1.0 achieves an impressive balance between speed and quality, significantly reducing generation time while maintaining the quality and diversity of the produced assets.
+为了解决现有的3D生成模型在生成速度和泛化能力上存在不足，我们开源了混元3D-1.0模型，可以帮助3D创作者和艺术家自动化生产3D资产。我们的模型采用两阶段生成方法，在保证质量和可控的基础上，仅需10秒即可生成3D资产。在第一阶段，我们采用了一种多视角扩散模型，轻量版模型能够在大约4秒内高效生成多视角图像，这些多视角图像从不同的视角捕捉了3D资产的丰富的纹理和几何先验，将任务从单视角重建松弛到多视角重建。在第二阶段，我们引入了一种前馈重建模型，利用上一阶段生成的多视角图像。该模型能够在大约3秒内快速而准确地重建3D资产。重建模型学习处理多视角扩散引入的噪声和不一致性，并利用条件图像中的可用信息高效恢复3D结构。最终，该模型可以实现输入任意单视角实现三维生成。
 
 
-## 🎉 **Hunyuan3D-1 Architecture**
+## 🎉 **Hunyuan3D-1.0 模型架构**
 
 <p align="center">
   <img src="./assets/overview_3.png"  height=400>
 </p>
 
 
-## 📈 Comparisons
+## 📈 比较
 
-We have evaluated Hunyuan3D-1.0 with other open-source 3d-generation methods, our Hunyuan3D-1.0 received the highest user preference across 5 metrics. Details in the picture on the lower left.
+通过和其他开源模型比较, 混元3D-1.0在5项指标都得到了最高用户评分。细节请查看以下用户研究结果。
 
-The lite model takes around 10 seconds to produce a 3D mesh from a single image on an NVIDIA A100 GPU, while the standard model takes roughly 25 seconds. The plot laid out in the lower right demonstrates that Hunyuan3D-1.0 achieves an optimal balance between quality and efficiency.
+在A100显卡上，轻量版模型仅需10s即可完成单图生成3D，标准版则大约需要25s。以下散点图表明腾讯混元3D-1.0实现了质量和速度的合理平衡。
 
 <p align="center">
   <img src="./assets/radar.png"  height=300>
   <img src="./assets/runtime.png"  height=300>
 </p>
 
-## Get Started
+## 使用
 
-#### Begin by cloning the repository:
+#### 复制代码仓库
 
 ```shell
 git clone https://github.com/tencent/Hunyuan3D-1
 cd Hunyuan3D-1
 ```
 
-#### Installation Guide for Linux
+#### Linux系统安装
 
-We provide an env_install.sh script file for setting up environment. 
+env_install.sh 脚本提供了如何安装环境：
 
 ```
-# step 1, create conda env
+# 第一步：创建环境
 conda create -n hunyuan3d-1 python=3.9 or 3.10 or 3.11 or 3.12
 conda activate hunyuan3d-1
 
+# 第二部：安装torch和相关依赖包
+which pip # check pip corresponds to python
+
+# modify the cuda version according to your machine (recommended)
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+# 第三步：安装其他相关依赖包
 bash env_install.sh
-
-# or
-pip install -r requirements.txt --index-url https://download.pytorch.org/whl/cu121
-
 ```
 
-because of dust3r, we offer a guide:
+由于dust3r的许可证限制, 我们仅提供其安装途径:
 
 ```
 cd third_party
@@ -116,9 +102,9 @@ wget https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge
 
 
 <details>
-<summary>💡Other tips for envrionment installation</summary>
+<summary>💡一些环境安装建议</summary>
     
-Optionally, you can install xformers or flash_attn to acclerate computation:
+可以选择安装 xformers 或 flash_attn 进行加速:
 
 ```
 pip install xformers --index-url https://download.pytorch.org/whl/cu121
@@ -137,22 +123,22 @@ when install pytorch3d, the gcc version is preferably greater than 9, and the gp
 
 </details>
 
-#### Download Pretrained Models
+#### 下载预训练模型
 
-The models are available at [https://huggingface.co/tencent/Hunyuan3D-1](https://huggingface.co/tencent/Hunyuan3D-1):
+模型下载链接 [https://huggingface.co/tencent/Hunyuan3D-1](https://huggingface.co/tencent/Hunyuan3D-1):
 
 + `Hunyuan3D-1/lite`, lite model for multi-view generation.
 + `Hunyuan3D-1/std`, standard model for multi-view generation.
 + `Hunyuan3D-1/svrm`, sparse-view reconstruction model.
 
 
-To download the model, first install the huggingface-cli. (Detailed instructions are available [here](https://huggingface.co/docs/huggingface_hub/guides/cli).)
+为了通过Hugging Face下载模型，请先下载 huggingface-cli. (安装细节可见 [here](https://huggingface.co/docs/huggingface_hub/guides/cli).)
 
 ```shell
 python3 -m pip install "huggingface_hub[cli]"
 ```
 
-Then download the model using the following commands:
+请使用以下命令下载模型:
 
 ```shell
 mkdir weights
@@ -162,8 +148,8 @@ mkdir weights/hunyuanDiT
 huggingface-cli download Tencent-Hunyuan/HunyuanDiT-v1.1-Diffusers-Distilled --local-dir ./weights/hunyuanDiT
 ```
 
-#### Inference 
-For text to 3d generation, we supports bilingual Chinese and English, you can use the following command to inference.
+#### 推理 
+对于文生3D，我们支持中/英双语生成，请使用以下命令进行本地推理：
 ```python
 python3 main.py \
     --text_prompt "a lovely rabbit" \
@@ -173,7 +159,7 @@ python3 main.py \
     --do_render
 ```
 
-For image to 3d generation, you can use the following command to inference.
+对于图生3D，请使用以下命令进行本地推理：
 ```python
 python3 main.py \
     --image_prompt "/path/to/your/image" \
@@ -182,7 +168,7 @@ python3 main.py \
     --do_texture_mapping \
     --do_render
 ```
-We list some more useful configurations for easy usage:
+更多参数详解：
 
 |    Argument        |  Default  |                     Description                     |
 |:------------------:|:---------:|:---------------------------------------------------:|
@@ -198,7 +184,7 @@ We list some more useful configurations for easy usage:
 |`--do_render`  |   False   |render gif   |
 
 
-We have also prepared scripts with different configurations for reference
+如果显卡内存有限，可以使用`--save_memory`命令，最低显卡内存要求如下：
 - Inference Std-pipeline requires 30GB VRAM (24G VRAM with --save_memory).
 - Inference Lite-pipeline requires 22GB VRAM (18G VRAM with --save_memory).
 - Note: --save_memory will increase inference time
@@ -210,7 +196,7 @@ bash scripts/image_to_3d_std.sh
 bash scripts/image_to_3d_lite.sh 
 ```
 
-If your gpu memory is 16G, you can try to run modules in pipeline seperately:
+如果你的显卡内存为16G，可以分别加载模型到显卡:
 ```bash
 bash scripts/text_to_3d_std_separately.sh 'a lovely rabbit' ./outputs/test # >= 16G
 bash scripts/text_to_3d_lite_separately.sh 'a lovely rabbit' ./outputs/test # >= 14G
@@ -218,37 +204,9 @@ bash scripts/image_to_3d_std_separately.sh ./demos/example_000.png ./outputs/tes
 bash scripts/image_to_3d_lite_separately.sh ./demos/example_000.png ./outputs/test # >= 10G
 ```
 
-#### Baking related
-We have provided the texture baking module here. The matching and warpping processes are completed using Dust3R, which is licensed under the CC BY-NC-SA 4.0 license. Please note that this is a non-commercial license, and therefore, this module cannot be used for commercial purposes.
+#### Gradio界面部署
 
-```bash
-mkdir -p ./third_party/weights/DUSt3R_ViTLarge_BaseDecoder_512_dpt
-huggingface-cli download naver/DUSt3R_ViTLarge_BaseDecoder_512_dpt \
-    --local-dir ./third_party/weights/DUSt3R_ViTLarge_BaseDecoder_512_dpt
-
-cd ./third_party
-git clone --recursive https://github.com/naver/dust3r.git
-
-cd ..
-```
-
-If you download related code and weights, we list some additional arg:
-
-|    Argument        |  Default  |                     Description                     |
-|:------------------:|:---------:|:---------------------------------------------------:|
-|`--do_bake`  |   False   | baking multi-view images onto mesh   |
-|`--bake_align_times`  |   3   | alignment number of image and mesh |
-
-
-Note: If you need baking, please ensure that `--do_bake` is set to `True` and `--do_texture_mapping` is also set to `True`.
-
-```bash
-python main.py ... --do_texture_mapping --do_bake (--do_render)
-```
-
-#### Using Gradio
-
-We have prepared two versions of multi-view generation, std and lite.
+我们分别提供轻量版和标准版界面：
 
 ```shell
 # std 
@@ -260,18 +218,18 @@ python3 app.py --use_lite
 python3 app.py --use_lite --save_memory
 ```
 
-Then the demo can be accessed through http://0.0.0.0:8080. It should be noted that the 0.0.0.0 here needs to be X.X.X.X with your server IP.
+Gradio界面体验地址为 http://0.0.0.0:8080. 这里 0.0.0.0 应当填写运行模型的机器IP地址。
 
-## Camera Parameters
+## 相机参数
 
-Output views are a fixed set of camera poses:
+生成多视图视角固定为
 
 + Azimuth (relative to input view): `+0, +60, +120, +180, +240, +300`.
 
 
-## Citation
+## 引用
 
-If you found this repository helpful, please cite our report:
+如果我们的仓库对您有帮助，请引用我们的工作
 ```bibtex
 @misc{yang2024tencent,
     title={Tencent Hunyuan3D-1.0: A Unified Framework for Text-to-3D and Image-to-3D Generation},

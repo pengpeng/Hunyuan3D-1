@@ -67,7 +67,7 @@ class Image2Views():
                 torch_dtype = torch.float16,
                 use_safetensors = True,
             )
-        self.pipe = self.pipe.to(device)
+        self.pipe = self.pipe if save_memory else self.pipe.to(device)
         self.order = [0, 1, 2, 3, 4, 5] if use_lite else [0, 2, 4, 5, 3, 1]
         self.save_memory = save_memory
         set_parameter_grad_false(self.pipe.unet)

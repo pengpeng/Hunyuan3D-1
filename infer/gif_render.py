@@ -25,7 +25,7 @@
 import os, sys
 sys.path.insert(0, f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}")
 
-from svrm.ldm.vis_util import render
+from svrm.ldm.vis_util import render_func
 from infer.utils import seed_everything, timing_decorator
 
 class GifRenderer():
@@ -47,7 +47,7 @@ class GifRenderer():
         fps=30, 
         rgb=True
     ):
-        render(
+        render_func(
             obj_filename,
             elev=elev, 
             azim=azim, 

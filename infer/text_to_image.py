@@ -46,8 +46,7 @@ class Text2Image():
         )
         set_parameter_grad_false(self.pipe.transformer)
         print('text2image transformer model', get_parameter_number(self.pipe.transformer))
-        if not save_memory: 
-            self.pipe = self.pipe.to(device)
+        self.pipe = self.pipe if save_memory else self.pipe.to(device)
         self.neg_txt = "文本,特写,裁剪,出框,最差质量,低质量,JPEG伪影,PGLY,重复,病态,残缺,多余的手指,变异的手," \
                        "画得不好的手,画得不好的脸,变异,畸形,模糊,脱水,糟糕的解剖学,糟糕的比例,多余的肢体,克隆的脸," \
                        "毁容,恶心的比例,畸形的肢体,缺失的手臂,缺失的腿,额外的手臂,额外的腿,融合的手指,手指太多,长脖子"
