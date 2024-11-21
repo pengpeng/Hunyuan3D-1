@@ -241,7 +241,6 @@ def check_image_available(image):
     
 
 def update_mode(mode):
-    # update mode, set some seeting automatically
     color_change = {
         'Vertex color': gr.update(value='vertex'),
         'Face color': gr.update(value='face'),
@@ -254,7 +253,7 @@ def update_mode(mode):
     }[mode]
     face_change = {
         'Vertex color': gr.update(value=120000, maximum=300000),
-        'Moderate': gr.update(value=60000, maximum=300000),
+        'Face color': gr.update(value=60000, maximum=300000),
         'Baking': gr.update(value=10000, maximum=60000)
     }[mode]
     render_change = {
