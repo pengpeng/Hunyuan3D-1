@@ -159,7 +159,7 @@ class MeshBaker:
                 print(err)
                 continue
 
-        print("Baking Finished")
+        print("\nBaking Finished\n")
         return obj_path
     
 

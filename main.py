@@ -85,8 +85,8 @@ def get_args():
         "--gen_steps", default=50, type=int
     )
     parser.add_argument(
-        "--max_faces_num", default=90000, type=int, 
-        help="max num of face, suggest 90000 for effect, 10000 for speed"
+        "--max_faces_num", default=120000, type=int, 
+        help="max num of face, suggest 120000 for vertex color, 10000 for texture/baking color"
     )
     parser.add_argument(
         "--save_memory", default=False, action="store_true"

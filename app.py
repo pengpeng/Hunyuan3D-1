@@ -34,6 +34,7 @@ from PIL import Image
 from einops import rearrange
 import pandas as pd
 
+# import spaces
 from infer import seed_everything, save_gif
 from infer import Text2Image, Removebg, Image2Views, Views2Mesh, GifRenderer
 from third_party.check import check_bake_available
@@ -47,7 +48,6 @@ except Exception as err:
     print("import baking related fail, run without baking")
     BAKE_AVAILEBLE = False
 
-
 warnings.simplefilter('ignore', category=UserWarning)
 warnings.simplefilter('ignore', category=FutureWarning)
 warnings.simplefilter('ignore', category=DeprecationWarning)
@@ -57,17 +57,15 @@ parser.add_argument("--use_lite", default=False, action="store_true")
 parser.add_argument("--mv23d_cfg_path", default="./svrm/configs/svrm.yaml", type=str)
 parser.add_argument("--mv23d_ckt_path", default="weights/svrm/svrm.safetensors", type=str)
 parser.add_argument("--text2image_path", default="weights/hunyuanDiT", type=str)
-parser.add_argument("--save_memory", default=False, action="store_true")
+parser.add_argument("--save_memory", default=False)
 parser.add_argument("--device", default="cuda:0", type=str)
 args = parser.parse_args()
+
 
 ################################################################
 # initial setting
 ################################################################
 
-CONST_PORT = 8080
-CONST_MAX_QUEUE = 1
-CONST_SERVER = '0.0.0.0'
 
 CONST_HEADER = '''
 <h2><a href='https://github.com/tencent/Hunyuan3D-1' target='_blank'><b>Tencent Hunyuan3D-1.0: A Unified Framework for Text-to-3D and Image-to-3D Generation</b></a></h2>
@@ -77,7 +75,7 @@ CONST_HEADER = '''
 CONST_NOTE = '''
 ❗️❗️❗️Usage❗️❗️❗️<br>
 
-Limited by format, the model can only export *.obj mesh with vertex colors. The "texture" mod can only work on *.glb.<br>
+Limited by format, the model can only export *.obj mesh with vertex colors. The "face" mod can only work on *.glb.<br>
 Please click "Do Rendering" to export a GIF.<br>
 You can click "Do Baking" to bake multi-view imgaes onto the shape.<br>
 
@@ -133,15 +131,19 @@ if BAKE_AVAILEBLE:
 
 ### functional modules    
 
-def gen_save_folder():
+def gen_save_folder(max_size=30):
     os.makedirs('./outputs/app_output', exist_ok=True)
     exists = set(int(_) for _ in os.listdir('./outputs/app_output') if not _.startswith("."))
-    if len(exists) == 30: shutil.rmtree(f"./outputs/app_output/0");cur_id = 0
-    else:                 cur_id = min(set(range(30)) - exists)
-    if os.path.exists(f"./outputs/app_output/{(cur_id + 1) % 30}"):
-        shutil.rmtree(f"./outputs/app_output/{(cur_id + 1) % 30}")
+    if len(exists) == max_size: 
+        shutil.rmtree(f"./outputs/app_output/0")
+        cur_id = 0
+    else:
+        cur_id = min(set(range(max_size)) - exists)
+    if os.path.exists(f"./outputs/app_output/{(cur_id + 1) % max_size}"):
+        shutil.rmtree(f"./outputs/app_output/{(cur_id + 1) % max_size}")
     save_folder = f'./outputs/app_output/{cur_id}'
     os.makedirs(save_folder, exist_ok=True)
+    print(f"mkdir {save_folder} suceess !!!")
     return save_folder
 
 def stage_0_t2i(text, seed, step, save_folder):
@@ -160,7 +162,7 @@ def stage_1_xbg(image, save_folder, force_remove):
     rgba = worker_xbg(image, force=force_remove)
     rgba.save(dst)
     return dst
-    
+
 def stage_2_i2v(image, seed, step, save_folder):
     if isinstance(image, str):
         image = Image.open(image)
@@ -181,9 +183,9 @@ def stage_3_v23(
     seed, 
     save_folder,
     target_face_count = 30000,
-    texture_color = 'texture'
+    texture_color = 'face'
 ): 
-    do_texture_mapping = texture_color == 'texture'
+    do_texture_mapping = texture_color == 'face'
     worker_v23(
         views_pil, 
         cond_pil, 
@@ -198,7 +200,7 @@ def stage_3_v23(
     return obj_dst, glb_dst
 
 def stage_3p_baking(save_folder, color, bake, force, front, others, align_times):
-    if color == "texture" and bake:
+    if color == "face" and bake:
         obj_dst = worker_baker(save_folder, force, front, others, align_times)
         glb_dst = obj_dst.replace(".obj", ".glb")
         return glb_dst
@@ -207,19 +209,20 @@ def stage_3p_baking(save_folder, color, bake, force, front, others, align_times)
 
 def stage_4_gif(save_folder, color, bake, render):
     if not render: return None
-
     baked_fld_list = sorted(glob(save_folder + '/view_*/bake/mesh.obj'))
     obj_dst = baked_fld_list[-1] if len(baked_fld_list)>=1 else save_folder+'/mesh.obj'
     assert os.path.exists(obj_dst), f"{obj_dst} file not found"
-
     gif_dst = obj_dst.replace(".obj", ".gif")
     worker_gif(obj_dst, gif_dst_path=gif_dst)
     return gif_dst
 
 
 def check_image_available(image):
+    # check image legal or not
     if image is None:
         return "Please upload image", gr.update()
+    elif not hasattr(image, 'mode'):
+        return "Not support, please upload other image", gr.update()
     elif image.mode == "RGBA":
         data = np.array(image)
         alpha_channel = data[:, :, 3]
@@ -238,28 +241,28 @@ def check_image_available(image):
     
 
 def update_mode(mode):
+    # update mode, set some seeting automatically
     color_change = {
-        'Quick': gr.update(value='vertex'),
-        'Moderate': gr.update(value='texture'),
-        'Appearance': gr.update(value='texture')
+        'Vertex color': gr.update(value='vertex'),
+        'Face color': gr.update(value='face'),
+        'Baking': gr.update(value='face')
     }[mode]
     bake_change = {
-        'Quick': gr.update(value=False),
-        'Moderate': gr.update(value=False),
-        'Appearance': gr.update(value=BAKE_AVAILEBLE)
+        'Vertex color': gr.update(value=False, interactive=False, visible=False),
+        'Face color': gr.update(value=False),
+        'Baking': gr.update(value=BAKE_AVAILEBLE)
     }[mode]
     face_change = {
-        'Quick': gr.update(value=120000, maximum=300000),
+        'Vertex color': gr.update(value=120000, maximum=300000),
         'Moderate': gr.update(value=60000, maximum=300000),
-        'Appearance': gr.update(value=10000, maximum=60000)
+        'Baking': gr.update(value=10000, maximum=60000)
     }[mode]
     render_change = {
-        'Quick': gr.update(value=False),
-        'Moderate': gr.update(value=True),
-        'Appearance': gr.update(value=True)
+        'Vertex color': gr.update(value=False, interactive=False, visible=False),
+        'Face color': gr.update(value=True),
+        'Baking': gr.update(value=True)
     }[mode]
     return color_change, bake_change, face_change, render_change
-    
     
 # ===============================================================
 # gradio display
@@ -278,17 +281,17 @@ with gr.Blocks() as demo:
             with gr.Tab("Text to 3D"):
                 with gr.Column():
                     text = gr.TextArea('一只黑白相间的熊猫在白色背景上居中坐着，呈现出卡通风格和可爱氛围。', 
-                                       lines=3, max_lines=20, label='Input text')
+                                       lines=3, max_lines=20, label='Input text (within 70 words)')
 
                     textgen_mode = gr.Radio(
-                        choices=['Quick', 'Moderate', 'Appearance'], 
-                        label="Simple settings",
-                        value='Appearance',
+                        choices=['Vertex color', 'Face color', 'Baking'], 
+                        label="Texture mode",
+                        value='Baking',
                         interactive=True
                     )
                     
                     with gr.Accordion("Custom settings", open=False):
-                        textgen_color = gr.Radio(choices=["vertex", "texture"], label="Color", value="texture")
+                        textgen_color = gr.Radio(choices=["vertex", "face"], label="Color", value="face")
                         
                         with gr.Row():
                             textgen_render = gr.Checkbox(
@@ -346,12 +349,12 @@ with gr.Blocks() as demo:
                             )
                             textgen_other_views = gr.CheckboxGroup(
                                 choices=['60°', '120°', '180°', '240°', '300°'], 
-                                label="Other views Baking",
+                                label="Other views baking",
                                 value=['180°'],
                                 interactive=True,
                                 visible=True
                             )
-                            textgen_align_times =gr.Slider(
+                            textgen_align_times = gr.Slider(
                                 value=3,
                                 minimum=1,
                                 maximum=5,
@@ -366,6 +369,9 @@ with gr.Blocks() as demo:
                     with gr.Row():
                         gr.Examples(examples=example_ts, inputs=[text], label="Text examples", examples_per_page=10)
                         
+            #===============================================================
+            # button change region
+            #===============================================================
                         
             textgen_mode.change(
                 fn=update_mode,
@@ -373,17 +379,34 @@ with gr.Blocks() as demo:
                 outputs=[textgen_color, textgen_bake, textgen_max_faces, textgen_render]
             )
             textgen_color.change(
-                fn=lambda x:[gr.update(value=x=='texture', interactive=x=='texture')]*2, 
+                fn=lambda x:[
+                    gr.update(value=(x=='face'), interactive=(x=='face'), visible=(x=='face')),
+                    gr.update(value=(x=='face'), interactive=(x=='face'), visible=(x=='face')),
+                ],
                 inputs=textgen_color, 
-                outputs=[textgen_bake, textgen_render]
+                outputs=[
+                    textgen_bake, 
+                    textgen_render
+                ]
             )
             textgen_bake.change(
-                fn= lambda x:[gr.update(visible=x)]*4+[gr.update(value=10000, minimum=2000, maximum=60000 if x else 300000)],
+                fn= lambda x:[
+                    gr.update(visible=x),
+                    gr.update(visible=x),
+                    gr.update(visible=x),
+                    gr.update(visible=x),
+                    gr.update(value=10000 if x else 120000, minimum=2000, maximum=60000 if x else 300000)
+                ],
                 inputs=textgen_bake, 
-                outputs=[textgen_front_baking, textgen_other_views, textgen_align_times, textgen_force_bake, textgen_max_faces]
+                outputs=[
+                    textgen_front_baking, 
+                    textgen_other_views, 
+                    textgen_align_times, 
+                    textgen_force_bake, 
+                    textgen_max_faces
+                ]
             )
             
-                    
             ### Image iutput region
             
             with gr.Tab("Image to 3D"):
@@ -394,14 +417,14 @@ with gr.Blocks() as demo:
                     alert_message = gr.Markdown("")  # for warning 
                     
                 imggen_mode = gr.Radio(
-                    choices=['Quick', 'Moderate', 'Appearance'], 
-                    label="Simple settings",
-                    value='Appearance',
+                    choices=['Vertex color', 'Face color', 'Baking'], 
+                    label="Texture mode",
+                    value='Baking',
                     interactive=True
                 )
                 
                 with gr.Accordion("Custom settings", open=False):
-                    imggen_color = gr.Radio(choices=["vertex", "texture"], label="Color", value="texture")
+                    imggen_color = gr.Radio(choices=["vertex", "face"], label="Color", value="face")
 
                     with gr.Row():
                         imggen_removebg = gr.Checkbox(
@@ -429,7 +452,7 @@ with gr.Blocks() as demo:
                         label="Gen steps",
                         interactive=True
                     )
-                    imggen_max_faces =gr.Slider(
+                    imggen_max_faces = gr.Slider(
                         value=10000,
                         minimum=2000,
                         maximum=60000,
@@ -453,7 +476,7 @@ with gr.Blocks() as demo:
                         )
                         imggen_other_views = gr.CheckboxGroup(
                             choices=['60°', '120°', '180°', '240°', '300°'], 
-                            label="Other views Baking",
+                            label="Other views baking",
                             value=['180°'],
                             interactive=True,
                             visible=True
@@ -466,6 +489,10 @@ with gr.Blocks() as demo:
                             label="Number of alignment attempts per view",
                             interactive=True
                         )
+                        
+                #===============================================================
+                # button change region
+                #===============================================================
 
                 input_image.change(
                     fn=check_image_available, 
@@ -480,15 +507,33 @@ with gr.Blocks() as demo:
                 )
                 
                 imggen_color.change(
-                    fn=lambda x:[gr.update(value=x=='texture', interactive=x=='texture')]*2, 
+                    fn=lambda x:[
+                        gr.update(value=(x=='face'), interactive=(x=='face'), visible=(x=='face')),
+                        gr.update(value=(x=='face'), interactive=(x=='face'), visible=(x=='face'))
+                    ], 
                     inputs=imggen_color, 
-                    outputs=[imggen_bake, imggen_render]
+                    outputs=[
+                        imggen_bake, 
+                        imggen_render
+                    ]
                 )
                 
                 imggen_bake.change(
-                    fn= lambda x:[gr.update(visible=x)]*4+[gr.update(value=10000, minimum=2000, maximum=60000 if x else 300000)],
+                    fn= lambda x:[
+                        gr.update(visible=x),
+                        gr.update(visible=x),
+                        gr.update(visible=x),
+                        gr.update(visible=x),
+                        gr.update( value=10000 if x else 120000, minimum=2000, maximum=60000 if x else 300000)
+                    ],
                     inputs=imggen_bake, 
-                    outputs=[imggen_front_baking, imggen_other_views, imggen_align_times, imggen_force_bake, imggen_max_faces]
+                    outputs=[
+                        imggen_front_baking, 
+                        imggen_other_views, 
+                        imggen_align_times,
+                        imggen_force_bake, 
+                        imggen_max_faces
+                    ]
                 )
 
                 with gr.Row():
@@ -497,7 +542,6 @@ with gr.Blocks() as demo:
                 with gr.Row():
                     gr.Examples(examples=example_is,  inputs=[input_image], 
                         label="Img examples", examples_per_page=10)
-            
                     
             gr.Markdown(CONST_NOTE)
                     
@@ -530,7 +574,7 @@ with gr.Blocks() as demo:
                 
             result_3dglb_texture = gr.Model3D(
                 clear_color=[0.0, 0.0, 0.0, 0.0],
-                label="GLB texture color",
+                label="GLB face color",
                 show_label=True,
                 visible=True,
                 camera_position=[90, 90, None],
@@ -538,7 +582,7 @@ with gr.Blocks() as demo:
 
             result_3dglb_baked = gr.Model3D(
                 clear_color=[0.0, 0.0, 0.0, 0.0],
-                label="GLB baked color",
+                label="GLB baking",
                 show_label=True,
                 visible=True,
                 camera_position=[90, 90, None],
@@ -549,7 +593,7 @@ with gr.Blocks() as demo:
             with gr.Row():
                 gr.Markdown(
                     "Due to Gradio limitations, OBJ files are displayed with vertex shading only, "
-                    "while GLB files can be viewed with texture shading. <br>For the best experience, "
+                    "while GLB files can be viewed with face color. <br>For the best experience, "
                     "we recommend downloading the GLB files and opening them with 3D software "
                     "like Blender or MeshLab."
                 )
@@ -558,17 +602,18 @@ with gr.Blocks() as demo:
     # gradio running code
     #===============================================================
     
-    none = gr.State(None)
     save_folder = gr.State()
     cond_image = gr.State()
     views_image = gr.State()
-    text_image = gr.State()
-    img_dst = gr.State()
     
-    
+    def handle_click(save_folder):
+        if save_folder is None:
+            save_folder = gen_save_folder()
+        return save_folder
+
     textgen_submit.click(
-        fn=gen_save_folder,
-        inputs=[],
+        fn=handle_click,
+        inputs=[save_folder],
         outputs=[save_folder]
     ).success(
         fn=stage_0_t2i, 
@@ -591,12 +636,12 @@ with gr.Blocks() as demo:
         fn=stage_4_gif, 
         inputs=[save_folder, textgen_color, textgen_bake, textgen_render], 
         outputs=[result_gif],
-    ).success(lambda: print('Text_to_3D Done ...'))
+    ).success(lambda: print('Text_to_3D Done ...\n'))
 
     
     imggen_submit.click(
-        fn=gen_save_folder,
-        inputs=[],
+        fn=handle_click,
+        inputs=[save_folder],
         outputs=[save_folder]
     ).success(
         fn=stage_1_xbg, 
@@ -619,12 +664,16 @@ with gr.Blocks() as demo:
         fn=stage_4_gif, 
         inputs=[save_folder, imggen_color, imggen_bake, imggen_render], 
         outputs=[result_gif],
-    ).success(lambda: print('Image_to_3D Done ...'))
+    ).success(lambda: print('Image_to_3D Done ...\n'))
     
     #===============================================================
     # start gradio server
     #===============================================================
+    CONST_PORT = 8080
+    CONST_MAX_QUEUE = 1
+    CONST_SERVER = '0.0.0.0'
 
     demo.queue(max_size=CONST_MAX_QUEUE)
     demo.launch(server_name=CONST_SERVER, server_port=CONST_PORT)
-
+    # demo.launch()
+    

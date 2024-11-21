@@ -19,6 +19,9 @@
 
 ## 🔥🔥🔥 News!!
 
+* Nov 21, 2024: 💬 We have introduced the new Baking module. Please give it a try!
+* Nov 20, 2024: 💬 We have added a Chinese version of the README.
+* Nov 18, 2024: 💬 Third-party developers have uploaded their ComfyUI. We appreciate their contributions! [[1]](https://github.com/jtydhr88/ComfyUI-Hunyuan3D-1-wrapper)[[2]](https://github.com/MrForExample/ComfyUI-3D-Pack)[[3]](https://github.com/TTPlanetPig/Comfyui_Hunyuan3D)
 * Nov 5, 2024: 💬 We support demo running  image_to_3d generation now. Please check the [script](#using-gradio) below.
 * Nov 5, 2024: 💬 We support demo running  text_to_3d generation now. Please check the [script](#using-gradio) below.
 
@@ -27,12 +30,11 @@
 
 - [x] Inference 
 - [x] Checkpoints
-- [ ] Baking related
-- [ ] Training
+- [x] Baking
 - [ ] ComfyUI
+- [ ] Training
 - [ ] Distillation Version
 - [ ] TensorRT Version
-
 
 
 ## **Abstract**
@@ -79,16 +81,16 @@ cd Hunyuan3D-1
 We provide an env_install.sh script file for setting up environment. 
 
 ```
-# step 1, create conda env
 conda create -n hunyuan3d-1 python=3.9 or 3.10 or 3.11 or 3.12
 conda activate hunyuan3d-1
 
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 bash env_install.sh
 
 # or
-pip install -r requirements.txt --index-url https://download.pytorch.org/whl/cu121
-
+pip3 install -r requirements.txt --index-url https://download.pytorch.org/whl/cu121
+pip3 install git+https://github.com/facebookresearch/pytorch3d@stable
+pip3 install git+https://github.com/NVlabs/nvdiffrast
 ```
 
 because of dust3r, we offer a guide:
@@ -101,7 +103,6 @@ cd ../third_party/weights
 wget https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
 
 ```
-
 
 <details>
 <summary>💡Other tips for envrionment installation</summary>
@@ -206,7 +207,7 @@ bash scripts/image_to_3d_std_separately.sh ./demos/example_000.png ./outputs/tes
 bash scripts/image_to_3d_lite_separately.sh ./demos/example_000.png ./outputs/test # >= 10G
 ```
 
-#### Baking related
+#### Baking
 We have provided the texture baking module here. The matching and warpping processes are completed using Dust3R, which is licensed under the CC BY-NC-SA 4.0 license. Please note that this is a non-commercial license, and therefore, this module cannot be used for commercial purposes.
 
 ```bash

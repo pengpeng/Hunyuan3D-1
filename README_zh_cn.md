@@ -19,6 +19,9 @@
 
 ## 🔥🔥🔥 更新!!
 
+* Nov 21, 2024: 💬 我们上传了新的纹理烘焙模块！
+* Nov 20, 2024: 💬 我们添加了中文版的 README。
+* Nov 18, 2024: 💬 感谢第三方开发者实现ComfyUI！[[1]](https://github.com/jtydhr88/ComfyUI-Hunyuan3D-1-wrapper)[[2]](https://github.com/MrForExample/ComfyUI-3D-Pack)[[3]](https://github.com/TTPlanetPig/Comfyui_Hunyuan3D)
 * Nov 5, 2024: 💬 已经支持图生3D。请在[script](#using-gradio)体验。
 * Nov 5, 2024: 💬 已经支持文生3D，请在[script](#using-gradio)体验。
 
@@ -27,9 +30,9 @@
 
 - [x] Inference 
 - [x] Checkpoints
-- [ ] Baking related
-- [ ] Training
+- [x] Baking
 - [ ] ComfyUI
+- [ ] Training
 - [ ] Distillation Version
 - [ ] TensorRT Version
 
@@ -75,18 +78,16 @@ cd Hunyuan3D-1
 env_install.sh 脚本提供了如何安装环境：
 
 ```
-# 第一步：创建环境
 conda create -n hunyuan3d-1 python=3.9 or 3.10 or 3.11 or 3.12
 conda activate hunyuan3d-1
 
-# 第二部：安装torch和相关依赖包
-which pip # check pip corresponds to python
-
-# modify the cuda version according to your machine (recommended)
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-
-# 第三步：安装其他相关依赖包
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 bash env_install.sh
+
+# or
+pip3 install -r requirements.txt --index-url https://download.pytorch.org/whl/cu121
+pip3 install git+https://github.com/facebookresearch/pytorch3d@stable
+pip3 install git+https://github.com/NVlabs/nvdiffrast
 ```
 
 由于dust3r的许可证限制, 我们仅提供其安装途径:
@@ -203,6 +204,33 @@ bash scripts/text_to_3d_lite_separately.sh 'a lovely rabbit' ./outputs/test # >=
 bash scripts/image_to_3d_std_separately.sh ./demos/example_000.png ./outputs/test  # >= 16G
 bash scripts/image_to_3d_lite_separately.sh ./demos/example_000.png ./outputs/test # >= 10G
 ```
+
+####  纹理烘焙
+
+我们提供了纹理烘焙模块。对齐和变形过程是使用Dust3R完成的，遵守CC BY-NC-SA 4.0许可。请注意，这是一个非商业许可证，因此该模块不能用于商业目的。
+
+```bash
+mkdir -p ./third_party/weights/DUSt3R_ViTLarge_BaseDecoder_512_dpt
+huggingface-cli download naver/DUSt3R_ViTLarge_BaseDecoder_512_dpt \
+    --local-dir ./third_party/weights/DUSt3R_ViTLarge_BaseDecoder_512_dpt
+
+cd ./third_party
+git clone --recursive https://github.com/naver/dust3r.git
+
+cd ..
+```
+如果您使用相关代码和权重，我们也列出一些烘焙相关参数：
+
+|    Argument        |  Default  |                     Description                     |
+|:------------------:|:---------:|:---------------------------------------------------:|
+|`--do_bake`  |   False   | baking multi-view images onto mesh   |
+|`--bake_align_times`  |   3   | alignment number of image and mesh |
+
+
+注意：如果需要烘焙，请确保`--do_bake`设置为`True`并且`--do_texture_mapping`也设置为`True`。
+
+```bash
+python main.py ... --do_texture_mapping --do_bake (--do_render)
 
 #### Gradio界面部署
 
