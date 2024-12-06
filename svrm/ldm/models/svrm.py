@@ -23,6 +23,7 @@
 # by Tencent in accordance with TENCENT HUNYUAN COMMUNITY LICENSE AGREEMENT.
 
 import os
+import gc
 import time
 import math
 import cv2
@@ -165,6 +166,7 @@ class SVRMModel(torch.nn.Module):
         triplane_gen = self.img_to_triplane_decoder(input_view_feat)  # [b, 3, tri_dim, h, w]
         del input_view_feat
         torch.cuda.empty_cache()
+        gc.collect()
 
         # --- triplane nerf render
 
@@ -207,12 +209,11 @@ class SVRMModel(torch.nn.Module):
         vtx_colors = self.render.forward_points(cur_triplane, torch.tensor(vtx_refine).unsqueeze(0).to(**here))
         vtx_colors = vtx_colors['rgb'].float().squeeze(0).cpu().numpy()
 
-        color_ratio = 0.8 # increase brightness
+
         with open(obj_vertext_path, 'w') as fid:
             verts = vtx_refine[:, [1,2,0]] 
             for pidx, pp in enumerate(verts):
                 color = vtx_colors[pidx]
-                color = [color[0]**color_ratio, color[1]**color_ratio, color[2]**color_ratio]
                 fid.write('v %f %f %f %f %f %f\n' % (pp[0], pp[1], pp[2], color[0], color[1], color[2]))
             for i, f in enumerate(faces_refine):
                 f1 = f + 1
@@ -259,7 +260,7 @@ class SVRMModel(torch.nn.Module):
             tex_map = tex_map.float().squeeze(0)  # (0, 1)
             tex_map = tex_map.view((texture_res, texture_res, 3)) 
             img = uv_padding(tex_map, hole_mask)
-            img = ((img/255.0) ** color_ratio) * 255  # increase brightness
+            img = ((img/255.0) ** 0.8) * 255  # increase brightness
             img = img.clip(0, 255).astype(np.uint8)
     
         verts = vtx_refine.cpu().numpy()[:, [1,2,0]] 
@@ -269,7 +270,7 @@ class SVRMModel(torch.nn.Module):
             fid.write('newmtl material_0\n')
             fid.write("Ka 1.000 1.000 1.000\n")
             fid.write("Kd 1.000 1.000 1.000\n")
-            fid.write("Ks 0.500 0.500 0.500\n")
+            fid.write("Ks 0.000 0.000 0.000\n")
             fid.write("d 1.0\n")
             fid.write("illum 2\n")
             fid.write(f'map_Kd texture.png\n')

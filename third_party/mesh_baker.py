@@ -52,7 +52,7 @@ class MeshBaker:
                     best_aligned_image, best_info = aligned_image, info
                 if info['mask_iou'] < self.iou_thresh:
                     break
-            print(f"Best Baking Info:{best_info['mask_iou']}")
+            # print(f"Best Baking Info:{best_info['mask_iou']}")
             best_baking_flag = best_info['mask_iou'] > self.iou_thresh
             return best_aligned_image, best_info, best_baking_flag
         except Exception as e:
@@ -112,19 +112,19 @@ class MeshBaker:
             print(f"\n Baking view ele_{ele} ...")
             
             if ele == 0:
-                if front == 'multi-view front view' or front == 'auto':
+                if front == 'input image' or front == 'auto':
                     aligned_cond, cond_info, _ = self.align_and_check(cond_pil, rendered_views[0], align_times=self.align_times)
                     if cond_info is None: continue
                     aligned_cond.convert("RGB").save(save_folder + f'/aligned_cond.jpg')
-                    if front == 'multi-view front view':
+                    if front == 'input image':
                         aligned_img, info = aligned_cond, cond_info
-                        print("Using Cond Image to bake front view")
+                        print("Using input image to bake front view")
         
-                if front == 'input image' or front == 'auto':
+                if front == 'multi-view front view' or front == 'auto':
                     aligned_img, info, _ = self.align_and_check(views[0], rendered_views[0], align_times=self.align_times)
                     if info is None: continue
                     aligned_img.save(save_folder + f'/aligned_{ele}.jpg')
-                    print("Using Input Image to bake front view")
+                    print("Using multi-view front view image to bake front view")
                 
                 if front == 'auto' and info['mask_iou'] < cond_info['mask_iou']:
                     print("Auto using Cond Image to bake front view")
@@ -133,7 +133,11 @@ class MeshBaker:
                 need_baking = info['mask_iou'] > self.iou_thresh
                 
             else:
-                aligned_img, info, need_baking = self.align_and_check(views[ele//60], rendered_views[min(ele//60, len(others)-1)])
+                aligned_img, info, need_baking = self.align_and_check(
+                    views[ele//60], 
+                    rendered_views[min(ele//60, len(others)-1)], 
+                    align_times=self.align_times
+                )
                 if info is None: continue
                 aligned_img.save(save_folder + f'/aligned_{ele}.jpg')
 

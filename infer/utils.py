@@ -30,6 +30,8 @@ import numpy as np
 import torch
 from torch.cuda.amp import autocast, GradScaler
 from functools import wraps
+from datetime import datetime
+import gc
 
 
 def seed_everything(seed):
@@ -55,7 +57,8 @@ def timing_decorator(category: str):
             end_time = time.time()
             elapsed_time = end_time - start_time
             func.call_count += 1
-            print(f"[HunYuan3D]-[{category}], cost time: {elapsed_time:.4f}s") # huiwen
+            gc.collect()
+            print(f"[{datetime.now()}][HunYuan3D]-[{category}], cost time: {elapsed_time:.4f}s") # huiwen
             return result
         return wrapper
     return decorator
@@ -90,4 +93,4 @@ def str_to_bool(s):
     elif s.lower() in ['false', 'f', 'no', 'n', '0']: 
         return False
     else: 
-        raise f"bool arg must one of ['true', 't', 'yes', 'y', '1', 'false', 'f', 'no', 'n', '0']"
+        raise f"{s} not in ['true', 't', 'yes', 'y', '1', 'false', 'f', 'no', 'n', '0']"
