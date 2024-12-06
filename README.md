@@ -1,3 +1,15 @@
+---
+title: Hunyuan3D-1.0
+emoji: 😻
+colorFrom: purple
+colorTo: red
+sdk: gradio
+sdk_version: 5.5.0
+app_file: app_hg.py
+pinned: false
+short_description: Text-to-3D and Image-to-3D Generation
+---
+
 [English](README.md) | [简体中文](README_zh_cn.md)
 
 <!-- ## **Hunyuan3D-1.0** -->
@@ -60,7 +72,7 @@ Our framework involves the text-to-image model, i.e., Hunyuan-DiT, making it a u
 
 We have evaluated Hunyuan3D-1.0 with other open-source 3d-generation methods, our Hunyuan3D-1.0 received the highest user preference across 5 metrics. Details in the picture on the lower left.
 
-The lite model takes around 10 seconds to produce a 3D mesh from a single image on an NVIDIA A100 GPU, while the standard model takes roughly 25 seconds. The plot laid out in the lower right demonstrates that Hunyuan3D-1.0 achieves an optimal balance between quality and efficiency.
+The lite model takes around 10 seconds to produce a 3D mesh from a single image, while the standard model takes roughly 25 seconds. The plot laid out in the lower right demonstrates that Hunyuan3D-1.0 achieves an optimal balance between quality and efficiency.
 
 <p align="center">
   <img src="./assets/radar.png"  height=300>
